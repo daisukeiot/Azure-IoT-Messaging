@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Procucer": {
+      "commandName": "Project",
+      "commandLineArgs": "-cs \"Endpoint=sb://eventhubdemo-eh-3e8f3572.servicebus.windows.net/;SharedAccessKeyName=DemoRule;SharedAccessKey=7q2yZDI4B+Is+IUB4v5Jw32vSR8010j3C8SrdRVzpug=;EntityPath=eventHubDemo-Eh-5A3A6C7C\" -p"
+    }
+  }
+}
