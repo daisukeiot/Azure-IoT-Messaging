@@ -1,3 +1,3 @@
-﻿$resouceGroup      = "eventHubDemo"
+﻿$resouceGroup      = "EventHubsDemo"
 
 Remove-AzResourceGroup -Name $resouceGroup -Force

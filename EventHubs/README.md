@@ -20,6 +20,16 @@
 1. A new "Send" access policy `SendRule`
 1. A new "Listen" access policy `ListenRule`
 
+Edit `setup.ps1` for :
+
+1. Location of resources (Default = westus2)
+1. Your Azure subscription name
+
+```powershell
+$location      = "westus2"
+$subscription  = ""
+```
+
 Run the script with :
 
 ```powershell

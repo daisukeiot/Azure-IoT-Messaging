@@ -1,14 +1,12 @@
 ﻿#
 # Modify parameters below
-# This script will create following resources
-# Resource Group
-# Event Hub
+#
+$location          = "westus2"
+$subscription      = ""
 
-$location = "westus2"
-$resourceGroup      = "EventHubsDemo"
+$resourceGroup     = "EventHubsDemo"
 $eventHubNamespace = $resourceGroup + "-NS-" + "{0:X}" -f (Get-Random)
 $eventHubName      = $resourceGroup + "-EH-" + "{0:X}" -f (Get-Random)
-$subscription      = "PDSInternal"
 $consumerGroupName = "DemoConsumerGroup"
 
 function log {
