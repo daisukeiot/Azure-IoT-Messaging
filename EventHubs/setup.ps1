@@ -27,7 +27,7 @@ Write-Host "====================================================================
 
 $module = Get-InstalledModule -Name Az
 
-if ($module -eq $null)
+if ($null -eq $module)
 {
     log "Installing Az Module"
     Install-Module -Name Az -AllowClobber -Scope CurrentUser -Force
@@ -35,7 +35,7 @@ if ($module -eq $null)
 
 # Login to Azure subscription if not logged in
 $azAccount = Get-AzContext
-if ($azAccount -eq $null)
+if ($null -eq $azAccount)
 {
     (New-Object -Com Shell.Application).Open("https://microsoft.com/devicelogin")
     $azAccount = Connect-AzAccount -Scope CurrentUser -Subscription $subscription -UseDeviceAuthentication
@@ -56,7 +56,6 @@ $resGroup = Get-AzResourceGroup -Name $resourceGroup
 if ($resGroup)
 {
     Write-Host "Resource Group $($resourceGroup) already exist"
-    $title    = 'something'
     $question = 'Are you sure you want to proceed?'
     $choices  = '&Yes', '&No'
 
@@ -104,7 +103,7 @@ $listenRule = New-AzEventHubAuthorizationRule -ResourceGroupName $resourceGroup 
 $sendKey = Get-AzEventHubKey -ResourceGroupName $resourceGroup -Namespace $eventHubNamespace -Name "SendRule"
 $listenKey = Get-AzEventHubKey -ResourceGroupName $resourceGroup -Namespace $eventHubNamespace -Name "ListenRule"
 
-if (($sendKey -eq $null) -or ($listenKey -eq $null))
+if (($null -eq $sendKey) -or ($null -eq $listenKey))
 {
     Write-Error "Could not retrieve Connection Strings"
     exit(1)
@@ -139,8 +138,6 @@ Write-host "  Message Retention : $($eventHub.MessageRetentionInDays) day(s)"
 Write-host "  Partition Count   : $($eventHub.PartitionCount)"
 Write-host "  Partition ID(s)   : $($eventHub.PartitionIds)"
 Write-Host "  Consumer Group    : $($consumerGroup.Name)"
-
-
 
 Write-Host "=============================================================================================="
 Write-Host '   ______ '                                         
