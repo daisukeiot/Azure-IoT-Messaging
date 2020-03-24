@@ -30,7 +30,7 @@ The ARM template will deploy `App Service` and `App Service Plan` with following
 
 :::image type="content" source="media/ARM-01.png" alt-text="ARM-01":::
 
-Once deployed, you can access the web site with <http://[Site Name].azurewebsites.net>
+Once deployed, you can access the web site with <http://[Site_Name].azurewebsites.net>
 
 :::image type="content" source="media/WebApp-01.png" alt-text="WebApp-01":::
 
