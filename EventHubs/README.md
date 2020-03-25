@@ -2,74 +2,129 @@
 
 ## Contents
 
-1. Powershell script to create a new Event Hubs instance
+1. Azure Resource Manager (ARM) template to create Event Hubs
 1. Event Hubs Consumer (Subscriber) App
 1. Event Hubs Producer (Publisher) App
 
-## Powershell Script
+## Event Hubs Resource
 
-`setup.ps1` configures Event Hubs with following parameters :
+In this demo, we will send and read/receive events from Event Hubs
 
-1. A new Resource Group `EventHubsDemo`
-1. A new Event Hubs Namespace `EventHubsDemo-NS-<Random Number>`
-    - 1 Throughput Unit
-1. A new Event Hub instance `EventHubsDemo-EH-<Random Number>`  
-    - 4 Partitions
-    - 1 day message retention
-1. A new Consumer Group `DemoConsumerGroup`
-1. A new "Send" access policy `SendRule`
-1. A new "Listen" access policy `ListenRule`
+Deploy Event Hubs by clicking "Deploy to Azure" button :
 
-Edit `setup.ps1` for :
+[![Deploy](../media/deploybutton.png)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fdaisukeiot%2FAzure-IoT-Messaging%2Fmaster%2FEventHubs%2FEventHubsARM.json)
 
-1. Location of resources (Default = westus2)
-1. Your Azure subscription name
+### Deploy Event Hubs
 
-```powershell
-$location      = "westus2"
-$subscription  = ""
-```
+- Subscription  
+    Select your Azure subscription
+- Resource Group  
+    Create a new resource group or use existing one
+- Location  
+    Select nearest Azure data center location
+- Event Hubs Namespace  
+    Name of Event Hubs Namespace
+- Event Hub Name  
+    Name of Event Hub
 
-Run the script with :
+:::image type="content" source="media/ARM-01.png" alt-text="ARM-01":::
 
-```powershell
-powershell -ExecutionPolicy bypass .\setup.ps1
-```
+### Event Hubs Setting
+
+The ARM Template will create Event Hubs with following settings
+
+|Name                 |Setting     |Description  |
+|---------------------|------------|-------------------------|
+|Namespace Name       | From UI    | Must be globally unique |
+|Event Hub Name       | From UI    | |
+|Location             | From UI    | |
+|SKU                  | Standard   | |
+|Throughput Unit      | 1          | |
+|Partitions           | 4          | Partition IDs = 0,1,2,3       |
+|Shared Access Policy | SendRule   | Only send events permission   |
+|Shared Access Policy | ListenRule | Only listen events permission |
+|Auto Inflate         | No         | |
+|Kafka Support        | Yes        | |
+|Message Retention    | 1 day      | |
+|Capture              | Not Enabled| |
+|Consumer Group       | democonsumergroup | |
 
 ## Consumer App
 
-`setup.ps1` will display  
+To run the Consumer App you need :
 
-- Connection String
-- Event Hub name
-- Consumer Group name
+1. Connection String
+1. Consumer Group : `democonsumergroup`
+1. Event Hub Name
 
-Run the consumer app with :
+### Connection String for SendRule
 
-```powershell
+Retrieve Connection String of `ListenRule` from Event Hubs Namespace with :
 
-dotnet --project .\Consumer\Consumer.csproj -cs <Connection String> -cg <Consumer Group> -hub <Event Hub Name>
+```bash
+# A name of existing resource group you created earlier
+myResourceGroup="<resource group name>"
+
+# A name of Event Hubs Namespace you created earlier
+myNameSpace="<Event Hubs Namespace>"
+
+# Select the Azure subscription that contains the resource group.
+az account set --subscription "<name or ID of the subscription>"
+
+# Get resource ID of the resource group.
+az eventhubs namespace authorization-rule keys list --resource-group $myResourceGroup --namespace-name $myNameSpace --name SendRule --query primaryConnectionString
 ```
 
-Optionally, you can read all events in specified event hub with `-all` option
+Example :
+
+```bash
+myResourceGroup="EventHubs-Demo"
+myNameSpace="EventHubsDemoNamespace"
+az eventhubs namespace authorization-rule keys list --resource-group $myResourceGroup --namespace-name $myNameSpace --name SendRule --query primaryConnectionString
+"Endpoint=sb://eventhubsdemonamespace.servicebus.windows.net/;SharedAccessKeyName=SendRule;SharedAccessKey=JTEfH7JR+d/kCpgcgyzYwVzb445DQSVPHqyLEZ9BSqE="
+```
+
+### Launch the Consumer App
+
+Open a new CMD window then run the consumer app with :
+
+```CMD
+cd \Azure-IoT-Messaging
+dotnet --project .\Consumer\Consumer.csproj -cs <Connection String> -cg democonsumergroup -hub <Event Hub Name>
+```
+
+> [!TIP]
+> Optionally, you can read all events in specified event hub with `-all` option
 
 ## Producer App
 
 The producer app sends events with following scenarios
 
-1. Simply send events  
+|Scenario           |Description |Purpose  |
+|--------------|-----------------------------------------|-------------------------|
+|Single events |Sends multiple single events             | Events are sent to different partitions |
+|Batched       |Sends multiple events in batch           | All events in a batch are sent to a single partition |
+|Partition Key |Sends multiple events with Partition Key | All events with the same Partition key are sent to a single partition |
+|Partition Id  |Sends multiple events with Partition Id  | The target partition can be specified by sender        |
 
-    Event Hubs will manage which partitions to use.  Typically round-robin fashion.
+### Connection String for ListenRule
 
-1. In batch  
+The ARM Template creates `ListenRule` with Listen permission.  Retrieve Connection String for the rule with :
 
-    Instead of sending many, small events, you can batch-send events
+```bash
+# Get resource ID of the resource group.
+az eventhubs namespace authorization-rule keys list --resource-group $myResourceGroup --namespace-name $myNameSpace --name ListenRule --query primaryConnectionString
+```
+Example :
 
-1. With Partition Key or Partition Id  
+```bash
+az eventhubs namespace authorization-rule keys list --resource-group $myResourceGroup --namespace-name $myNameSpace --name ListenRule --query primaryConnectionString
+"Endpoint=sb://eventhubsdemonamespace.servicebus.windows.net/;SharedAccessKeyName=ListenRule;SharedAccessKey=iUFnJUIu1I1/ILT0oaIYHrtvJHTkPEyizirnu5cQclw="
+```
 
-    Event Hubs keeps the order of events at partition level.  If the order of events are important, all related events should be sent to the same partition by specifying `Partition Key` or `Partition Id`
+### Launch the Producer App
 
-Run the producer app with :
+Open a new CMD window then run the producer app with :
 
 ```powershell
 dotnet --project .\Producer\Producer.csproj -cs <Connection String> -hub <Event Hub Name>
@@ -78,6 +133,9 @@ dotnet --project .\Producer\Producer.csproj -cs <Connection String> -hub <Event 
 ## Scenario 1 : No target partition
 
 This scenario will result in events evenly distributed across partitions
+
+> [!TIP]  
+> Notice events are sent to partition 0 to 4 in round-robin fashion
 
 ```bash
 Enqueue at 2020/03/24 11:30:08:995 | Seq # 0103 | Partition 1 | Offset : 006120 | Data Message # 00
@@ -98,6 +156,9 @@ Enqueue at 2020/03/24 11:30:10:013 | Seq # 0106 | Partition 0 | Offset : 006288 
 
 Since data is submitted in a batch (or in a single request), all events are stored in a single partition
 
+> [!TIP]  
+> Notice all events are sent to Partition 1
+
 ```bash
 Enqueue at 2020/03/24 11:32:33:007 | Seq # 0106 | Partition 1 | Offset : 006288 | Data Message # 00 Batched
 Enqueue at 2020/03/24 11:32:33:007 | Seq # 0107 | Partition 1 | Offset : 006352 | Data Message # 01 Batched
@@ -117,6 +178,11 @@ Enqueue at 2020/03/24 11:32:33:007 | Seq # 0117 | Partition 1 | Offset : 006992 
 
 A partition key is used as a hash and Event Hubs keeps events with the same hash to be stored in a single partition
 
+> [!TIP]  
+> Notice all events are sent to Partition 2  
+> This makes easier to process events in order  
+> However, you don't know which partition your events will end up
+
 ```bash
 Enqueue at 2020/03/24 11:33:30:988 | Seq # 0179 | Partition 2 | Offset : 015872 | Data Message # 00 with Partition Key
 Enqueue at 2020/03/24 11:33:31:332 | Seq # 0180 | Partition 2 | Offset : 015992 | Data Message # 01 with Partition Key
@@ -135,6 +201,10 @@ Enqueue at 2020/03/24 11:33:33:676 | Seq # 0190 | Partition 2 | Offset : 017192 
 ## Scenario 4 : With Partition Id
 
 You may send events with specific partition with `Partition Id`
+
+> [!TIP]  
+> Notice all events are sent to respective partition as specified  
+> With this, you have full control over which partition you need to listen to
 
 ```bash
 Enqueue at 2020/03/24 11:33:33:852 | Seq # 0107 | Partition 0 | Offset : 006344 | Data Message # 00 to Partition 0
@@ -159,6 +229,6 @@ Enqueue at 2020/03/24 11:33:34:940 | Seq # 0110 | Partition 3 | Offset : 006656 
 
 To clean up resources, run
 
-```powershell
-powershell -ExecutionPolicy bypass .\cleanup.ps1
+```bash
+az group delete --name $myResourceGroup --yes
 ```

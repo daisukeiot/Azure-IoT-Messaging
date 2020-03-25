@@ -5,7 +5,7 @@
         "EventHubsNamespace": {
             "type": "string",
             "metadata": {
-                "description": "The name of Event Hubs Namespace that you wish to create."
+                "description": "The name of Event Hubs Namespace that you wish to create.  Must be globally unique"
             }
         },
         "EventHubName": {
