@@ -77,6 +77,9 @@ namespace Consumer
             try
             {
                 Console.WriteLine($"Read Start        : {DateTime.Now.ToString()}");
+                //
+                // If this is IoT Hub Eventhub Compatible Endpoint, device id is in ev.Data.SystemProperties["iothub-connection-device-id"]
+                //
                 await foreach (PartitionEvent ev in consumer.ReadEventsAsync(startReadingAtEarliestEvent: allEvents.HasValue(), readOptions, cancellationSource.Token))
                 {
                     Console.WriteLine("Enqueu at {0:yyyy/MM/dd H:mm:ss:fff} | Seq # {1:D4} | Partition {2} | Offset : {3:D6} | Data {4}",
