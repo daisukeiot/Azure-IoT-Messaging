@@ -125,7 +125,7 @@ namespace Procucer
         private static void ShowHelp()
         {
             Console.WriteLine("Please specify Event Hub Connection string");
-            Console.WriteLine("dotnet run producer -cs \"<Connection String>\"");
+            Console.WriteLine("dotnet run producer -cs \"<Connection String>\" -hub <Event Hub Name>");
         }
     }
 }
