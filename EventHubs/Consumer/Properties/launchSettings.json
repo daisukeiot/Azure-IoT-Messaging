@@ -1,8 +1,7 @@
 {
   "profiles": {
     "Consumer": {
-      "commandName": "Project",
-      "commandLineArgs": "-cs \"Endpoint=sb://eventhubdemo-eh-2e297f93.servicebus.windows.net/;SharedAccessKeyName=ListenRule;SharedAccessKey=BuicSNpcJW+5eO+HsI2MdpHOOdEM4AEgH9MqbhDtjK8=\" -cg DemoConsumerGroup"
+      "commandName": "Project"
     }
   }
 }
