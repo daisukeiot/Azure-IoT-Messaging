@@ -23,9 +23,11 @@ Deploy Event Hubs by clicking "Deploy to Azure" button :
 - Location  
     Select nearest Azure data center location
 - Event Hubs Namespace  
-    Name of Event Hubs Namespace
+    Name of Event Hubs Namespace.  Must be globally unique.  Use default name or provide your own.  
+  - Default Value : [Resource Group Name]-NS-[Hash]
+
 - Event Hub Name  
-    Name of Event Hub
+    Name of Event Hub.  Use default name or provide your own.
 
 :::image type="content" source="media/ARM-01.png" alt-text="ARM-01":::
 
@@ -57,44 +59,105 @@ To run the Consumer App you need :
 1. Consumer Group : `democonsumergroup`
 1. Event Hub Name
 
-### Connection String for SendRule
+### Connection String for ListenRule
 
-Retrieve Connection String of `ListenRule` from Event Hubs Namespace with :
+Retrieve Connection String of `ListenRule` from Event Hubs Namespace store to `listenCs` with :
 
-```bash
-# A name of existing resource group you created earlier
-myResourceGroup="<resource group name>"
+- Windows
 
-# A name of Event Hubs Namespace you created earlier
-myNameSpace="<Event Hubs Namespace>"
+    ```cmd
+    # A name of Resource Group
+    set myResourceGroup=<Resource Group Name>
 
-# Select the Azure subscription that contains the resource group.
-az account set --subscription "<name or ID of the subscription>"
+    # A name of Event Hubs Namespace
+    set myNameSpace=<Event Hubs Namespace>
 
-# Get resource ID of the resource group.
-az eventhubs namespace authorization-rule keys list --resource-group $myResourceGroup --namespace-name $myNameSpace --name SendRule --query primaryConnectionString
-```
+    # Select the Azure subscription that contains the resource group.
+    az account set --subscription "<name or ID of the subscription>"
 
-Example :
+    # Get Connection String of ListenRule and store to listenCs
+    for /f "tokens=*" %i in ('az eventhubs namespace authorization-rule keys list --resource-group %myResourceGroup% --namespace-name %myNameSpace% --name ListenRule --query primaryConnectionString') do set listenCs=%i
+    ```
 
-```bash
-myResourceGroup="EventHubs-Demo"
-myNameSpace="EventHubsDemoNamespace"
-az eventhubs namespace authorization-rule keys list --resource-group $myResourceGroup --namespace-name $myNameSpace --name SendRule --query primaryConnectionString
-"Endpoint=sb://eventhubsdemonamespace.servicebus.windows.net/;SharedAccessKeyName=SendRule;SharedAccessKey=JTEfH7JR+d/kCpgcgyzYwVzb445DQSVPHqyLEZ9BSqE="
-```
+- Linux
+
+    ```bash
+    myResourceGroup=<Resource Group Name>
+    myNameSpace=<Event Hubs Namespace>
+    az account set --subscription "<name or ID of the subscription>"
+    listenCS="$(az eventhubs namespace authorization-rule keys list --resource-group $myResourceGroup --namespace-name $myNameSpace --name SendRule --query primaryConnectionString)"
+    ```
+
+#### ListenRule Example
+
+Run AZ CLI command and set the Connection String to a local variable `listenCS`
+
+- Windows
+
+    ```cmd
+    set myResourceGroup=EventHubs-Demo
+    set myNameSpace=EventHubs-Demo-NS-i2bky5u4lygia
+    az account set --subscription "HOL"
+    for /f "tokens=*" %i in ('az eventhubs namespace authorization-rule keys list --resource-group %myResourceGroup% --namespace-name %myNameSpace% --name ListenRule --query primaryConnectionString') do set listenCs=%i
+    ```
+
+- Linux
+
+    ```bash
+    myResourceGroup=EventHubs-Demo
+    myNameSpace=EventHubs-Demo-NS-i2bky5u4lygia
+    az account set --subscription "HOL"
+    listenCS="$(az eventhubs namespace authorization-rule keys list --resource-group $myResourceGroup --namespace-name $myNameSpace --name ListenRule --query primaryConnectionString)"
+    ```
+
+### Retrieve Event Hub Name
+
+Retrieve the name of Event Hub and set to `eventHub` variable with :
+
+- Windows
+
+    ```cmd
+    for /f "tokens=*" %i in ('az eventhubs eventhub list --resource-group %myResourceGroup% --namespace-name %myNameSpace% --query [0].name') do set eventHub=%i
+    ```
+
+- Linux
+
+    ```bash
+    eventHub="$(az eventhubs eventhub list --resource-group $myResourceGroup --namespace-name $myNameSpace --query [0].name)"
+    ```
 
 ### Launch the Consumer App
 
 Open a new CMD window then run the consumer app with :
 
-```CMD
-cd \Azure-IoT-Messaging
-dotnet --project .\Consumer\Consumer.csproj -cs <Connection String> -cg democonsumergroup -hub <Event Hub Name>
-```
+- Windows
+
+    ```cmd
+    cd C:\Azure-IoT-Messaging\EventHubs\Consumer
+    dotnet run -cs %listenCS% -cg democonsumergroup -hub %eventHub%
+    ```
+
+- Linux
+
+    ```bash
+        cd ~/Azure-IoT-Messaging/EventHubs/Consumer
+        dotnet run -cs $listenCS -cg democonsumergroup -hub $eventHub
+    ```
 
 > [!TIP]
 > Optionally, you can read all events in specified event hub with `-all` option
+
+### Consumer App Example
+
+```text
+C:\Azure-IoT-Messaging\EventHubs\Consumer>dotnet run -cs %listenCS% -cg %myConsumerGroup% -hub %eventHub%
+Connection String : Endpoint=sb://eventhubs-demo-ns-i2bky5u4lygia.serv....
+Event Hub         : mydemoeventhub
+Consumer Group    : democonsumergroup
+Read all events   : False
+Timeout           : 600 seconds
+Read Start        : 3/27/2020 2:27:13 PM
+```
 
 ## Producer App
 
@@ -107,28 +170,85 @@ The producer app sends events with following scenarios
 |Partition Key |Sends multiple events with Partition Key | All events with the same Partition key are sent to a single partition |
 |Partition Id  |Sends multiple events with Partition Id  | The target partition can be specified by sender        |
 
-### Connection String for ListenRule
+### Connection String for SendRule and Event Hub name
 
-The ARM Template creates `ListenRule` with Listen permission.  Retrieve Connection String for the rule with :
+Open a new CMD window then run the producer app.  
 
-```bash
-# Get resource ID of the resource group.
-az eventhubs namespace authorization-rule keys list --resource-group $myResourceGroup --namespace-name $myNameSpace --name ListenRule --query primaryConnectionString
-```
-Example :
+Retrieve Connection String of `SendRule` from Event Hubs Namespace and store to `sendCs` as well as Event Hub name and store to `eventHub` with :
 
-```bash
-az eventhubs namespace authorization-rule keys list --resource-group $myResourceGroup --namespace-name $myNameSpace --name ListenRule --query primaryConnectionString
-"Endpoint=sb://eventhubsdemonamespace.servicebus.windows.net/;SharedAccessKeyName=ListenRule;SharedAccessKey=iUFnJUIu1I1/ILT0oaIYHrtvJHTkPEyizirnu5cQclw="
-```
+- Windows
+
+    ```cmd
+    # A name of Resource Group
+    set myResourceGroup=<Resource Group Name>
+
+    # A name of Event Hubs Namespace
+    set myNameSpace=<Event Hubs Namespace>
+
+    # A name of Consumer Group
+    set myConsumerGroup=<Consumer Group Name>
+    # Select the Azure subscription that contains the resource group.
+    az account set --subscription "<name or ID of the subscription>"
+
+    # Get Connection String of ListenRule and store to sendCs
+    for /f "tokens=*" %i in ('az eventhubs namespace authorization-rule keys list --resource-group %myResourceGroup% --namespace-name %myNameSpace% --name SendRule --query primaryConnectionString') do set sendCs=%i
+
+    # Get Event Hub name and store to eventHub
+    for /f "tokens=*" %i in ('az eventhubs eventhub list --resource-group %myResourceGroup% --namespace-name %myNameSpace% --query [0].name') do set eventHub=%i
+    ```
+
+- Linux
+
+    ```bash
+    myResourceGroup="<Resource Group Name>"
+    myNameSpace="<Event Hubs Namespace>"
+    myConsumerGroup="<Consumer Group Name>"
+    az account set --subscription "<name or ID of the subscription>"
+    listenCS="$(az eventhubs namespace authorization-rule keys list --resource-group $myResourceGroup --namespace-name $myNameSpace --name SendRule --query primaryConnectionString)"
+    eventHub="$(az eventhubs eventhub list --resource-group $myResourceGroup --namespace-name $myNameSpace --query [0].name)"
+    ```
+
+#### Producer Parameter Example
+
+- Windows
+
+    ```cmd
+    set myResourceGroup=EventHubs-Demo
+    set myNameSpace=EventHubs-Demo-NS-i2bky5u4lygia
+    az account set --subscription "HOL"
+    for /f "tokens=*" %i in ('az eventhubs namespace authorization-rule keys list --resource-group %myResourceGroup% --namespace-name %myNameSpace% --name SendRule --query primaryConnectionString') do set sendCs=%i
+    for /f "tokens=*" %i in ('az eventhubs eventhub list --resource-group %myResourceGroup% --namespace-name %myNameSpace% --query [0].name') do set eventHub=%i
+    ```
+
+- Linux
+
+    ```bash
+    myResourceGroup=EventHubs-Demo
+    myNameSpace=EventHubs-Demo-NS-i2bky5u4lygia
+    az account set --subscription "HOL"
+    sendCs="$(az eventhubs namespace authorization-rule keys list --resource-group $myResourceGroup --namespace-name $myNameSpace --name SendRule --query primaryConnectionString)"
+    eventHub="$(az eventhubs eventhub list --resource-group $myResourceGroup --namespace-name $myNameSpace --query [0].name)"
+    ```
 
 ### Launch the Producer App
 
-Open a new CMD window then run the producer app with :
+- Windows
 
-```powershell
-dotnet --project .\Producer\Producer.csproj -cs <Connection String> -hub <Event Hub Name>
+    ```cmd
+    cd C:\Azure-IoT-Messaging\EventHubs\Producer
+    dotnet run -cs %sendCs% -hub %eventHub%
+    ```
+
+- Linux
+
+```bash
+    cd ~/Azure-IoT-Messaging/EventHubs/Producer
+    dotnet run -cs $sendCs -hub $eventHub
 ```
+
+#### Example
+
+:::image type="content" source="media/VSCode.png" alt-text="VSCode":::
 
 ## Scenario 1 : No target partition
 
@@ -137,20 +257,22 @@ This scenario will result in events evenly distributed across partitions
 > [!TIP]  
 > Notice events are sent to partition 0 to 4 in round-robin fashion
 
-```bash
-Enqueue at 2020/03/24 11:30:08:995 | Seq # 0103 | Partition 1 | Offset : 006120 | Data Message # 00
-Enqueue at 2020/03/24 11:30:09:137 | Seq # 0176 | Partition 2 | Offset : 015680 | Data Message # 01
-Enqueue at 2020/03/24 11:30:09:334 | Seq # 0104 | Partition 3 | Offset : 006272 | Data Message # 02
-Enqueue at 2020/03/24 11:30:09:513 | Seq # 0104 | Partition 0 | Offset : 006176 | Data Message # 03
-Enqueue at 2020/03/24 11:30:09:588 | Seq # 0104 | Partition 1 | Offset : 006176 | Data Message # 04
-Enqueue at 2020/03/24 11:30:09:637 | Seq # 0177 | Partition 2 | Offset : 015744 | Data Message # 05
-Enqueue at 2020/03/24 11:30:09:663 | Seq # 0105 | Partition 3 | Offset : 006328 | Data Message # 06
-Enqueue at 2020/03/24 11:30:09:779 | Seq # 0105 | Partition 0 | Offset : 006232 | Data Message # 07
-Enqueue at 2020/03/24 11:30:09:917 | Seq # 0105 | Partition 1 | Offset : 006232 | Data Message # 08
-Enqueue at 2020/03/24 11:30:09:949 | Seq # 0178 | Partition 2 | Offset : 015808 | Data Message # 09
-Enqueue at 2020/03/24 11:30:09:975 | Seq # 0106 | Partition 3 | Offset : 006384 | Data Message # 10
-Enqueue at 2020/03/24 11:30:10:013 | Seq # 0106 | Partition 0 | Offset : 006288 | Data Message # 11
+```text
+Enqueue at 2020/03/27 22:43:35:315 | Seq # 0238 | Partition 3 | Offset : 021184 | Message # 00
+Enqueue at 2020/03/27 22:43:35:366 | Seq # 0359 | Partition 0 | Offset : 032336 | Message # 01
+Enqueue at 2020/03/27 22:43:35:398 | Seq # 0696 | Partition 1 | Offset : 070464 | Message # 02
+Enqueue at 2020/03/27 22:43:35:437 | Seq # 0328 | Partition 2 | Offset : 031744 | Message # 03
+Enqueue at 2020/03/27 22:43:35:472 | Seq # 0239 | Partition 3 | Offset : 021248 | Message # 04
+Enqueue at 2020/03/27 22:43:35:507 | Seq # 0360 | Partition 0 | Offset : 032400 | Message # 05
+Enqueue at 2020/03/27 22:43:35:538 | Seq # 0697 | Partition 1 | Offset : 070528 | Message # 06
+Enqueue at 2020/03/27 22:43:35:578 | Seq # 0329 | Partition 2 | Offset : 031808 | Message # 07
+Enqueue at 2020/03/27 22:43:35:614 | Seq # 0240 | Partition 3 | Offset : 021312 | Message # 08
+Enqueue at 2020/03/27 22:43:35:648 | Seq # 0361 | Partition 0 | Offset : 032464 | Message # 09
+Enqueue at 2020/03/27 22:43:35:694 | Seq # 0698 | Partition 1 | Offset : 070592 | Message # 10
+Enqueue at 2020/03/27 22:43:35:734 | Seq # 0330 | Partition 2 | Offset : 031872 | Message # 11
 ```
+
+:::image type="content" source="media/VSCode-Output.png" alt-text="VSCode-Output":::
 
 ## Scenario 2 : Batch Mode
 
@@ -159,19 +281,27 @@ Since data is submitted in a batch (or in a single request), all events are stor
 > [!TIP]  
 > Notice all events are sent to Partition 1
 
-```bash
-Enqueue at 2020/03/24 11:32:33:007 | Seq # 0106 | Partition 1 | Offset : 006288 | Data Message # 00 Batched
-Enqueue at 2020/03/24 11:32:33:007 | Seq # 0107 | Partition 1 | Offset : 006352 | Data Message # 01 Batched
-Enqueue at 2020/03/24 11:32:33:007 | Seq # 0108 | Partition 1 | Offset : 006416 | Data Message # 02 Batched
-Enqueue at 2020/03/24 11:32:33:007 | Seq # 0109 | Partition 1 | Offset : 006480 | Data Message # 03 Batched
-Enqueue at 2020/03/24 11:32:33:007 | Seq # 0110 | Partition 1 | Offset : 006544 | Data Message # 04 Batched
-Enqueue at 2020/03/24 11:32:33:007 | Seq # 0111 | Partition 1 | Offset : 006608 | Data Message # 05 Batched
-Enqueue at 2020/03/24 11:32:33:007 | Seq # 0112 | Partition 1 | Offset : 006672 | Data Message # 06 Batched
-Enqueue at 2020/03/24 11:32:33:007 | Seq # 0113 | Partition 1 | Offset : 006736 | Data Message # 07 Batched
-Enqueue at 2020/03/24 11:32:33:007 | Seq # 0114 | Partition 1 | Offset : 006800 | Data Message # 08 Batched
-Enqueue at 2020/03/24 11:32:33:007 | Seq # 0115 | Partition 1 | Offset : 006864 | Data Message # 09 Batched
-Enqueue at 2020/03/24 11:32:33:007 | Seq # 0116 | Partition 1 | Offset : 006928 | Data Message # 10 Batched
-Enqueue at 2020/03/24 11:32:33:007 | Seq # 0117 | Partition 1 | Offset : 006992 | Data Message # 11 Batched
+```text
+Enqueue at 2020/03/27 22:44:14:596 | Seq # 0241 | Partition 3 | Offset : 021376 | Message # 00 Batch 00
+Enqueue at 2020/03/27 22:44:14:596 | Seq # 0242 | Partition 3 | Offset : 021448 | Message # 01 Batch 00
+Enqueue at 2020/03/27 22:44:14:596 | Seq # 0243 | Partition 3 | Offset : 021520 | Message # 02 Batch 00
+Enqueue at 2020/03/27 22:44:14:596 | Seq # 0244 | Partition 3 | Offset : 021592 | Message # 03 Batch 00
+Enqueue at 2020/03/27 22:44:14:596 | Seq # 0245 | Partition 3 | Offset : 021664 | Message # 04 Batch 00
+Enqueue at 2020/03/27 22:44:14:596 | Seq # 0246 | Partition 3 | Offset : 021736 | Message # 05 Batch 00
+Enqueue at 2020/03/27 22:44:14:596 | Seq # 0247 | Partition 3 | Offset : 021808 | Message # 06 Batch 00
+Enqueue at 2020/03/27 22:44:14:596 | Seq # 0248 | Partition 3 | Offset : 021880 | Message # 07 Batch 00
+Enqueue at 2020/03/27 22:44:14:596 | Seq # 0249 | Partition 3 | Offset : 021952 | Message # 08 Batch 00
+Enqueue at 2020/03/27 22:44:14:596 | Seq # 0250 | Partition 3 | Offset : 022024 | Message # 09 Batch 00
+Enqueue at 2020/03/27 22:44:14:596 | Seq # 0251 | Partition 3 | Offset : 022096 | Message # 10 Batch 00
+Enqueue at 2020/03/27 22:44:14:596 | Seq # 0252 | Partition 3 | Offset : 022168 | Message # 11 Batch 00
+Enqueue at 2020/03/27 22:44:14:631 | Seq # 0362 | Partition 0 | Offset : 032528 | Message # 00 Batch 01
+Enqueue at 2020/03/27 22:44:14:631 | Seq # 0363 | Partition 0 | Offset : 032600 | Message # 01 Batch 01
+Enqueue at 2020/03/27 22:44:14:631 | Seq # 0364 | Partition 0 | Offset : 032672 | Message # 02 Batch 01
+Enqueue at 2020/03/27 22:44:14:631 | Seq # 0365 | Partition 0 | Offset : 032744 | Message # 03 Batch 01
+Enqueue at 2020/03/27 22:44:14:631 | Seq # 0366 | Partition 0 | Offset : 032816 | Message # 04 Batch 01
+Enqueue at 2020/03/27 22:44:14:631 | Seq # 0367 | Partition 0 | Offset : 032888 | Message # 05 Batch 01
+Enqueue at 2020/03/27 22:44:14:631 | Seq # 0368 | Partition 0 | Offset : 032960 | Message # 06 Batch 01
+  :
 ```
 
 ## Scenario 3 : With Partition Key
@@ -183,19 +313,28 @@ A partition key is used as a hash and Event Hubs keeps events with the same hash
 > This makes easier to process events in order  
 > However, you don't know which partition your events will end up
 
-```bash
-Enqueue at 2020/03/24 11:33:30:988 | Seq # 0179 | Partition 2 | Offset : 015872 | Data Message # 00 with Partition Key
-Enqueue at 2020/03/24 11:33:31:332 | Seq # 0180 | Partition 2 | Offset : 015992 | Data Message # 01 with Partition Key
-Enqueue at 2020/03/24 11:33:31:722 | Seq # 0181 | Partition 2 | Offset : 016112 | Data Message # 02 with Partition Key
-Enqueue at 2020/03/24 11:33:32:003 | Seq # 0182 | Partition 2 | Offset : 016232 | Data Message # 03 with Partition Key
-Enqueue at 2020/03/24 11:33:32:285 | Seq # 0183 | Partition 2 | Offset : 016352 | Data Message # 04 with Partition Key
-Enqueue at 2020/03/24 11:33:32:628 | Seq # 0184 | Partition 2 | Offset : 016472 | Data Message # 05 with Partition Key
-Enqueue at 2020/03/24 11:33:32:972 | Seq # 0185 | Partition 2 | Offset : 016592 | Data Message # 06 with Partition Key
-Enqueue at 2020/03/24 11:33:33:176 | Seq # 0186 | Partition 2 | Offset : 016712 | Data Message # 07 with Partition Key
-Enqueue at 2020/03/24 11:33:33:411 | Seq # 0187 | Partition 2 | Offset : 016832 | Data Message # 08 with Partition Key
-Enqueue at 2020/03/24 11:33:33:536 | Seq # 0188 | Partition 2 | Offset : 016952 | Data Message # 09 with Partition Key
-Enqueue at 2020/03/24 11:33:33:614 | Seq # 0189 | Partition 2 | Offset : 017072 | Data Message # 10 with Partition Key
-Enqueue at 2020/03/24 11:33:33:676 | Seq # 0190 | Partition 2 | Offset : 017192 | Data Message # 11 with Partition Key
+Example :
+
+Key `GJMD5Z` => Partition 0
+Key `CysOuc` => Partition 1
+Key `v4myXj` => Partition 3
+
+```text
+Enqueue at 2020/03/27 22:44:46:547 | Seq # 0374 | Partition 0 | Offset : 033392 | Message # 00 with Key GJMD5Z
+Enqueue at 2020/03/27 22:44:46:579 | Seq # 0711 | Partition 1 | Offset : 071520 | Message # 01 with Key CysOuc
+Enqueue at 2020/03/27 22:44:46:609 | Seq # 0375 | Partition 0 | Offset : 033504 | Message # 02 with Key GJMD5Z
+Enqueue at 2020/03/27 22:44:46:650 | Seq # 0253 | Partition 3 | Offset : 022240 | Message # 03 with Key Krd7xK
+Enqueue at 2020/03/27 22:44:46:697 | Seq # 0254 | Partition 3 | Offset : 022352 | Message # 04 with Key Krd7xK
+Enqueue at 2020/03/27 22:44:46:728 | Seq # 0255 | Partition 3 | Offset : 022464 | Message # 05 with Key v4myXj
+Enqueue at 2020/03/27 22:44:46:766 | Seq # 0712 | Partition 1 | Offset : 071632 | Message # 06 with Key CysOuc
+Enqueue at 2020/03/27 22:44:46:791 | Seq # 0256 | Partition 3 | Offset : 022576 | Message # 07 with Key v4myXj
+Enqueue at 2020/03/27 22:44:46:829 | Seq # 0713 | Partition 1 | Offset : 071744 | Message # 08 with Key CysOuc
+Enqueue at 2020/03/27 22:44:46:860 | Seq # 0714 | Partition 1 | Offset : 071856 | Message # 09 with Key CysOuc
+Enqueue at 2020/03/27 22:44:46:900 | Seq # 0257 | Partition 3 | Offset : 022688 | Message # 10 with Key Krd7xK
+Enqueue at 2020/03/27 22:44:46:923 | Seq # 0715 | Partition 1 | Offset : 071968 | Message # 11 with Key CysOuc
+Enqueue at 2020/03/27 22:44:46:962 | Seq # 0258 | Partition 3 | Offset : 022800 | Message # 12 with Key Krd7xK
+Enqueue at 2020/03/27 22:44:47:009 | Seq # 0259 | Partition 3 | Offset : 022912 | Message # 13 with Key v4myXj
+  :
 ```
 
 ## Scenario 4 : With Partition Id
@@ -207,28 +346,33 @@ You may send events with specific partition with `Partition Id`
 > With this, you have full control over which partition you need to listen to
 
 ```bash
-Enqueue at 2020/03/24 11:33:33:852 | Seq # 0107 | Partition 0 | Offset : 006344 | Data Message # 00 to Partition 0
-Enqueue at 2020/03/24 11:33:33:898 | Seq # 0108 | Partition 0 | Offset : 006416 | Data Message # 01 to Partition 0
-Enqueue at 2020/03/24 11:33:33:945 | Seq # 0109 | Partition 0 | Offset : 006488 | Data Message # 02 to Partition 0
-Enqueue at 2020/03/24 11:33:34:023 | Seq # 0110 | Partition 0 | Offset : 006560 | Data Message # 03 to Partition 0
-Enqueue at 2020/03/24 11:33:34:155 | Seq # 0118 | Partition 1 | Offset : 007056 | Data Message # 00 to Partition 1
-Enqueue at 2020/03/24 11:33:34:186 | Seq # 0119 | Partition 1 | Offset : 007128 | Data Message # 01 to Partition 1
-Enqueue at 2020/03/24 11:33:34:233 | Seq # 0120 | Partition 1 | Offset : 007200 | Data Message # 02 to Partition 1
-Enqueue at 2020/03/24 11:33:34:264 | Seq # 0121 | Partition 1 | Offset : 007272 | Data Message # 03 to Partition 1
-Enqueue at 2020/03/24 11:33:34:365 | Seq # 0191 | Partition 2 | Offset : 017312 | Data Message # 00 to Partition 2
-Enqueue at 2020/03/24 11:33:34:427 | Seq # 0192 | Partition 2 | Offset : 017392 | Data Message # 01 to Partition 2
-Enqueue at 2020/03/24 11:33:34:552 | Seq # 0193 | Partition 2 | Offset : 017472 | Data Message # 02 to Partition 2
-Enqueue at 2020/03/24 11:33:34:631 | Seq # 0194 | Partition 2 | Offset : 017552 | Data Message # 03 to Partition 2
-Enqueue at 2020/03/24 11:33:34:831 | Seq # 0107 | Partition 3 | Offset : 006440 | Data Message # 00 to Partition 3
-Enqueue at 2020/03/24 11:33:34:862 | Seq # 0108 | Partition 3 | Offset : 006512 | Data Message # 01 to Partition 3
-Enqueue at 2020/03/24 11:33:34:909 | Seq # 0109 | Partition 3 | Offset : 006584 | Data Message # 02 to Partition 3
-Enqueue at 2020/03/24 11:33:34:940 | Seq # 0110 | Partition 3 | Offset : 006656 | Data Message # 03 to Partition 3
+Enqueue at 2020/03/27 22:44:48:438 | Seq # 0383 | Partition 0 | Offset : 034400 | Message # 00 to Partition 0
+Enqueue at 2020/03/27 22:44:48:469 | Seq # 0384 | Partition 0 | Offset : 034480 | Message # 01 to Partition 0
+Enqueue at 2020/03/27 22:44:48:500 | Seq # 0385 | Partition 0 | Offset : 034560 | Message # 02 to Partition 0
+Enqueue at 2020/03/27 22:44:48:627 | Seq # 0724 | Partition 1 | Offset : 072976 | Message # 00 to Partition 1
+Enqueue at 2020/03/27 22:44:48:658 | Seq # 0725 | Partition 1 | Offset : 073056 | Message # 01 to Partition 1
+Enqueue at 2020/03/27 22:44:48:705 | Seq # 0726 | Partition 1 | Offset : 073136 | Message # 02 to Partition 1
+Enqueue at 2020/03/27 22:44:48:801 | Seq # 0343 | Partition 2 | Offset : 032800 | Message # 00 to Partition 2
+Enqueue at 2020/03/27 22:44:48:848 | Seq # 0344 | Partition 2 | Offset : 032880 | Message # 01 to Partition 2
+Enqueue at 2020/03/27 22:44:48:879 | Seq # 0345 | Partition 2 | Offset : 032960 | Message # 02 to Partition 2
+Enqueue at 2020/03/27 22:44:48:994 | Seq # 0279 | Partition 3 | Offset : 025152 | Message # 00 to Partition 3
+Enqueue at 2020/03/27 22:44:49:025 | Seq # 0280 | Partition 3 | Offset : 025232 | Message # 01 to Partition 3
+Enqueue at 2020/03/27 22:44:49:056 | Seq # 0281 | Partition 3 | Offset : 025312 | Message # 02 to Partition 3
 ```
 
 ## Cleanup
 
 To clean up resources, run
 
-```bash
-az group delete --name $myResourceGroup --yes
-```
+- Windows
+
+    ```cmd
+    az group delete --name %myResourceGroup% --yes
+    ```
+
+- Linux
+
+    ```bash
+    az group delete --name $myResourceGroup --yes
+    ```
+    

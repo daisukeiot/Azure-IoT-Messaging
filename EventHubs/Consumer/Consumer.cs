@@ -10,6 +10,7 @@ namespace Consumer
 {
     class Consumer
     {
+        private static int readTimetoutSeconds = 600;
         static async Task<int> Main(string[] args)
         {
             var app = new CommandLineApplication();
@@ -43,26 +44,27 @@ namespace Consumer
 
             if (group.HasValue() && !string.IsNullOrEmpty(group.Value()))
             {
-                consumerGroup = group.Value();
+                consumerGroup = group.Value().Replace("\"", "").Trim();
             }
             else
             {
                 consumerGroup = EventHubConsumerClient.DefaultConsumerGroupName;
             }
 
-            Console.WriteLine("Connection String : {0}....", connectionString.Value().Substring(0, 50));
-            Console.WriteLine($"Event Hub         : {hub.Value()}");
+            Console.WriteLine("Connection String : {0}....", connectionString.Value().Replace("\"", "").Trim().Substring(0, 50));
+            Console.WriteLine($"Event Hub         : {hub.Value().Replace("\"", "").Trim()}");
             Console.WriteLine($"Consumer Group    : {consumerGroup}");
             Console.WriteLine($"Read all events   : {allEvents.HasValue()}");
+            Console.WriteLine($"Timeout           : {readTimetoutSeconds} seconds");
 
-            EventHubConsumerClient consumer = new EventHubConsumerClient(consumerGroup, connectionString.Value(), hub.Value());
+            EventHubConsumerClient consumer = new EventHubConsumerClient(consumerGroup, connectionString.Value().Replace("\"", "").Trim(), hub.Value().Replace("\"", "").Trim());
 
             var part = await consumer.GetPartitionIdsAsync();
             var part_prop = await consumer.GetPartitionPropertiesAsync(part[0]);
             var hub_prop = await consumer.GetEventHubPropertiesAsync();
 
             using CancellationTokenSource cancellationSource = new CancellationTokenSource();
-            cancellationSource.CancelAfter(TimeSpan.FromSeconds(90));
+            cancellationSource.CancelAfter(TimeSpan.FromSeconds(readTimetoutSeconds));
 
             //
             // https://docs.microsoft.com/en-us/dotnet/api/azure.messaging.eventhubs.consumer.eventhubconsumerclient.readeventsasync?view=azure-dotnet
@@ -77,12 +79,13 @@ namespace Consumer
             try
             {
                 Console.WriteLine($"Read Start        : {DateTime.Now.ToString()}");
+                Console.WriteLine("Waiting for events.  CTRL+C to exit");
                 //
                 // If this is IoT Hub Eventhub Compatible Endpoint, device id is in ev.Data.SystemProperties["iothub-connection-device-id"]
                 //
                 await foreach (PartitionEvent ev in consumer.ReadEventsAsync(startReadingAtEarliestEvent: allEvents.HasValue(), readOptions, cancellationSource.Token))
                 {
-                    Console.WriteLine("Enqueu at {0:yyyy/MM/dd H:mm:ss:fff} | Seq # {1:D4} | Partition {2} | Offset : {3:D6} | Data {4}",
+                    Console.WriteLine("Enqueue at {0:yyyy/MM/dd H:mm:ss:fff} | Seq # {1:D4} | Partition {2} | Offset : {3:D6} | {4}",
                         ev.Data.EnqueuedTime,
                         ev.Data.SequenceNumber,
                         ev.Partition.PartitionId,
