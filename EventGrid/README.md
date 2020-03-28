@@ -281,7 +281,7 @@ You should see new events in Event Grid Viewer.
 |App Configuration      | <https://docs.microsoft.com/en-us/azure/event-grid/event-schema-app-configuration> |
 |Azure Machine Learning | <https://docs.microsoft.com/en-us/azure/event-grid/event-schema-machine-learning>|
 |Azure Maps             | <https://docs.microsoft.com/en-us/azure/event-grid/event-schema-azure-maps> |
-|Azure SingalR          | <https://docs.microsoft.com/en-us/azure/event-grid/event-schema-azure-signalr>|
+|Azure SignalR          | <https://docs.microsoft.com/en-us/azure/event-grid/event-schema-azure-signalr>|
 |Blob Storage           | <https://docs.microsoft.com/en-us/azure/event-grid/event-schema-blob-storage>         |
 |Container Registry     | <https://docs.microsoft.com/en-us/azure/event-grid/event-schema-container-registry>         |
 |Event Hubs             | <https://docs.microsoft.com/en-us/azure/event-grid/event-schema-event-hubs>         |
