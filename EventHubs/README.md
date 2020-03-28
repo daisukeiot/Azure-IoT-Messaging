@@ -12,8 +12,7 @@
 - Event Hubs Producer App publishes events to Event Hubs with different parameters
 - When events are submitted by the Producer App, you can see those events in the Consumer App
 
-:::image type="content" source="media/Flow.png" alt-text="Flow":::
-
+![Flow](media/Flow.png)
 ## Event Hubs Resource
 
 In this demo, we will send and read/receive events from Event Hubs
@@ -37,7 +36,7 @@ Deploy Event Hubs by clicking "Deploy to Azure" button below :
 - Event Hub Name  
     Name of Event Hub.  Use default name or provide your own.
 
-:::image type="content" source="media/ARM-01.png" alt-text="ARM-01":::
+![ARM-01](media/ARM-01.png)
 
 ### Event Hubs Setting
 
@@ -256,7 +255,7 @@ Retrieve Connection String of `SendRule` from Event Hubs Namespace and store to 
 
 #### Example
 
-:::image type="content" source="media/VSCode.png" alt-text="VSCode":::
+![VSCode](media/VSCode.png)
 
 ## Scenario 1 : No target partition
 
@@ -280,7 +279,7 @@ Enqueue at 2020/03/27 22:43:35:694 | Seq # 0698 | Partition 1 | Offset : 070592 
 Enqueue at 2020/03/27 22:43:35:734 | Seq # 0330 | Partition 2 | Offset : 031872 | Message # 11
 ```
 
-:::image type="content" source="media/VSCode-Output.png" alt-text="VSCode-Output":::
+![VSCode-Output.png](media/VSCode-Output.png)
 
 ## Scenario 2 : Batch Mode
 

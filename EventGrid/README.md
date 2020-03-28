@@ -14,7 +14,7 @@
 - Make changes to Resource Group so Azure Resource Manager publishes events
 - Event Grid Viewer displays the contents of received events (Topic)
 
-:::image type="content" source="media/Flow.png" alt-text="Flow":::
+![Flow](media/Flow.png)
 
 ## Event Grid Viewer
 
@@ -39,17 +39,17 @@ The ARM template will deploy `App Service` and `App Service Plan` with following
     Provide a name for App Service or accept default ([Resource Group name]-Plan)
 - SKU : F1 is fine, if F1 is already used, D1 ($9.49/month)
 
-:::image type="content" source="media/ARM-01.png" alt-text="ARM-01":::
+![ARM-01](media/ARM-01.png)
 
 Once deployed, you can access the web site with <http://[Site_Name].azurewebsites.net>
 
 Optionally, you can find the URL in App Service's Overview page at Azure Portal
 
-:::image type="content" source="media/ARM-03.png" alt-text="ARM-03":::
+![ARM-03](media/ARM-03.png)
 
 Open Event Grid Viewer site and confirm you can access
 
-:::image type="content" source="media/WebApp-01.png" alt-text="WebApp-01":::
+![WebApp-01](media/WebApp-01.png)
 
 ## Event Grid Subscription
 
@@ -131,11 +131,11 @@ In order to create a new Event Grid Subscription, we need to provide :
 
 This will create an event subscription called `EventGridDemoSubscription`
 
-:::image type="content" source="media/ARM-02.png" alt-text="ARM-02":::
+![ARM-02](media/ARM-02.png)
 
 You can also confirm the subscription in "Event Grid Subscriptions" view
 
-:::image type="content" source="media/Subscription-01.png" alt-text="Subscription-01":::
+![Subscription-01](media/Subscription-01.png)
 
 - Windows
 
@@ -272,7 +272,7 @@ You should see new events in Event Grid Viewer.
 > [!TIP]  
 > You may have to wait for event delivery for few seconds to a minute or so
 
-:::image type="content" source="media/WebApp-02.png" alt-text="WebApp-02":::
+![WebApp-02](media/WebApp-02.png)
 
 ## Other Azure services as publishers
 
