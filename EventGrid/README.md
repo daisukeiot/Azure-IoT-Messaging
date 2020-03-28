@@ -2,14 +2,25 @@
 
 ## Contents
 
-1. Azure Resource Manager (ARM) template to create a web site as WebHooks subscriber app
-1. A script to create a subscription with AzCli
+1. Create an Event Grid Viewer App with Azure Resource Manager (ARM) template
+1. Create a subscription with Azure CLI
+1. Make changes to Resource Group by adding a new resource and deleting it
+1. Confirm the event is pushed to Event Grid Viewer app
 
-## WebHooks Subscriber App
+## Mechanics
 
-Using Event Grid Viewer app from <https://github.com/Azure-Samples/azure-event-grid-viewer>, set up a web site by clicking "Deploy to Azure" button :
+- Event Grid Viewer is a web app (Home Page) that exposes WebHooks endpoint
+- Create an Event Grid Subscription with Azure Resource Manager to publish events to Event Grid Viewer's WebHooks endpoint
+- Make changes to Resource Group so Azure Resource Manager publishes events
+- Event Grid Viewer displays the contents of received events (Topic)
 
-[![Deploy](../media/deploybutton.png)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAzure-Samples%2Fazure-event-grid-viewer%2Fmaster%2Fazuredeploy.json)
+:::image type="content" source="media/Flow.png" alt-text="Flow":::
+
+## Event Grid Viewer
+
+Using Event Grid Viewer app from <https://github.com/Azure-Samples/azure-event-grid-viewer>, set up a web site by clicking "Deploy to Azure" button below :
+
+[![Deploy](../media/deploybutton.png)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fdaisukeiot%2FAzure-IoT-Messaging%2Fmaster%2FEventGrid%2FEventGridARM.json)
 
 ### Deploy Event Grid Viewer Web App
 
@@ -22,23 +33,49 @@ The ARM template will deploy `App Service` and `App Service Plan` with following
 - Location  
     Select nearest Azure data center location
 - Site Name : Becomes your website's sub-domain  
+    Provide a globally unique name or accept default ([Resource Group Name]-Web-[Hash])
     e.g. <http://[Site-Name].azurewebsites.net>  
-    Must be globally unique
 - Hosting Plan Name  
-    A name for App Service
+    Provide a name for App Service or accept default ([Resource Group name]-Plan)
 - SKU : F1 is fine, if F1 is already used, D1 ($9.49/month)
 
 :::image type="content" source="media/ARM-01.png" alt-text="ARM-01":::
 
 Once deployed, you can access the web site with <http://[Site_Name].azurewebsites.net>
 
+Optionally, you can find the URL in App Service's Overview page at Azure Portal
+
+:::image type="content" source="media/ARM-03.png" alt-text="ARM-03":::
+
+Open Event Grid Viewer site and confirm you can access
+
 :::image type="content" source="media/WebApp-01.png" alt-text="WebApp-01":::
 
-## Setting up publishers
+## Event Grid Subscription
 
-Configure Azure Resource Group as a publisher
+Setting a new subscription means :
+
+- Register an endpoint so Event Grid can call the endpoint when events are published
+- Register events, or `Event Type`, that we are interested in  
+  We will use Azure Resource Manager as a publisher.  Azure Resource Manager publishes events when there are changes to resources, such as creating and deleting a resource.
+
+There are multiple ways you can configure the subscription
+
+- [Azure Portal](https://docs.microsoft.com/en-us/azure/event-grid/subscribe-through-portal)  
+- [Powershell](https://docs.microsoft.com/en-us/azure/event-grid/scripts/event-grid-powershell-azure-subscription)
+- [Az CLI](https://docs.microsoft.com/en-us/azure/event-grid/scripts/event-grid-cli-azure-subscription)
+
+### Azure Resource Manager as a Event Publisher
+
+Resource Group generates events from Azure Resource Manager on various events such as when a new resource is created or deleted.
+
+Full list of Event Types from Azure Resource Manager :
+
+<https://docs.microsoft.com/en-us/azure/event-grid/event-schema-resource-groups#available-event-types>
 
 ### Install Azure CLI Event Grid extension
+
+We will use Azure CLI to create an Event Grid subscription.
 
 Install Event Grid extension with :
 
@@ -46,158 +83,196 @@ Install Event Grid extension with :
 az extension add --name eventgrid
 ```
 
-### Register a subscription
+### Create an Event Grid Subscription
 
-```bash
-# Endpoint is your WebHooks app
-# e.g. http://eventgridviewer.azurewebsites.net/api/updates
-myEndpoint="<endpoint URL>"
+In order to create a new Event Grid Subscription, we need to provide :
 
-# A name of existing resource group
-# You can use the resource group from Event Grid Viewer
-myResourceGroup="<resource group name>"
+- A new of the Event Grid Subscription  
+- ID of source resource that publishes events  
+  E.g. the ID of Resource Group we want to subscribe events
+- Endpoint to push events  
+  E.g. WebHooks endpoint of Event Grid Viewer
 
-# Select the Azure subscription that contains the resource group.
-az account set --subscription "<name or ID of the subscription>"
+- Windows
 
-# Get resource ID of the resource group.
-resourceGroupID=$(az group show --name $myResourceGroup --query id --output tsv)
+    ```cmd
 
-# Subscribe to the resource group. Provide the name of the resource group you want to subscribe to.
-az eventgrid event-subscription create \
-  --name demoSubscriptionToResourceGroup \
-  --source-resource-id $resourceGroupID \
-  --endpoint $myEndpoint
-```
+    # Select the Azure subscription that contains the resource group that we want to receive events
+    az account set --subscription "<name or ID of the subscription>"
 
-This will create an event subscription called `demoSubscriptionToResourceGroup`
+    # Get resource ID of the resource group that we want to receive events
+    resourceGroupID=$(az group show --name <Resource Group Name> --query id --output tsv)
+
+    # Create a new Event Grid Subscription
+    az eventgrid event-subscription create \
+      --name <Name of the new Event Grid Subscription> \
+      --source-resource-id %resourceGroupID% \
+      --endpoint "<endpoint URL>"
+    ```
+
+- Linux
+
+    ```bash
+    az account set --subscription "<name or ID of the subscription>"
+
+    resourceGroupID=$(az group show --name <Resource Group Name> --query id --output tsv)
+
+    az eventgrid event-subscription create \
+      --name <Name of the new Event Grid Subscription> \
+      --source-resource-id $resourceGroupID \
+      --endpoint "<endpoint URL>"
+    ```
+
+#### Example
+
+- Name : EventGridDemoSubscription
+- Source Resource ID : /subscriptions/46e2593f-996e-4982-a929-8d07ea946e79/resourceGroups/EventGrid-Demo  
+- Endpoint : <https://eventgrid-demo-portal-3rew7lnrbqmce.azurewebsites.net/api/updates>
+
+This will create an event subscription called `EventGridDemoSubscription`
 
 :::image type="content" source="media/ARM-02.png" alt-text="ARM-02":::
 
-### Event Types
+You can also confirm the subscription in "Event Grid Subscriptions" view
 
-Resource Group generates events from Azure Resource Manager on various events such as when a new resource is created or deleted.
+:::image type="content" source="media/Subscription-01.png" alt-text="Subscription-01":::
 
-Full list of Event Types from Azure Resource Manager :
+- Windows
 
-https://docs.microsoft.com/en-us/azure/event-grid/event-schema-resource-groups#available-event-types
+    ```cmd
+    set SubscriptionName=EventGridDemoSubscription
+    set ResourceGroupName=EventGrid-Demo
+    set Endpoint="https://eventgrid-demo-portal-3rew7lnrbqmce.azurewebsites.net/api/updates"
 
-### Receiving Events
+    for /f "tokens=*" %i in ('az group show --name %ResourceGroupName% --query id') do set resourceGroupID=%i
+    az eventgrid event-subscription create --name EventGridDemoSubscription --source-resource-id %resourceGroupID% --endpoint %Endpoint%
 
-When you create or delete a resource, you should see events in Event Grid Viewer app
+    {
+      "deadLetterDestination": null,
+      "destination": {
+        "endpointBaseUrl": "https://eventgrid-demo-portal-3rew7lnrbqmce.azurewebsites.net/api/updates",
+        "endpointType": "WebHook",
+        "endpointUrl": null
+      },
+      "expirationTimeUtc": null,
+        :
+        :
+      "labels": null,
+      "name": "EventGridDemoSubscription",
+      "provisioningState": "Succeeded",
+      "resourceGroup": "EventGrid-Demo",
+      "retryPolicy": {
+        "eventTimeToLiveInMinutes": 1440,
+        "maxDeliveryAttempts": 30
+      },
+      "topic": "/subscriptions/46e2593f-996e-4982-a929-8d07ea946e79/resourceGroups/eventgrid-demo",
+      "type": "Microsoft.EventGrid/eventSubscriptions"
+    }
+    ```
 
-:::image type="content" source="media/WebApp-02.png" alt-text="WebApp-02":::
+- Linux
 
-### Create a resource
+    ```bash
+    SubscriptionName=EventGridDemoSubscription
+    ResourceGroupName=EventGrid-Demo
+    Endpoint=https://eventgrid-demo-portal-3rew7lnrbqmce.azurewebsites.net/api/updates
+    resourceGroupID=$(az group show --name EventGrid-Demo --query id --output tsv)  
+    az eventgrid event-subscription create --name $SubscriptionName --source-resource-id $resourceGroupID --endpoint $Endpoint
+    {
+      "deadLetterDestination": null,
+      "deadLetterWithResourceIdentity": null,
+      "deliveryWithResourceIdentity": null,
+      "destination": {
+        "azureActiveDirectoryApplicationIdOrUri": null,
+        "azureActiveDirectoryTenantId": null,
+        "endpointBaseUrl": "https://eventgrid-demo-portal-3rew7lnrbqmce.azurewebsites.net/api/updates",
+        "endpointType": "WebHook",
+        "endpointUrl": null,
+       :
+       :
+      "retryPolicy": {
+        "eventTimeToLiveInMinutes": 1440,
+        "maxDeliveryAttempts": 30
+      },
+      "topic": "/subscriptions/46e2593f-996e-4982-a929-8d07ea946e79/resourceGroups/eventgrid-demo",
+      "type": "Microsoft.EventGrid/eventSubscriptions"
+    }
+    ```
+
+> [!TIP]  
+> If you receive this error, register Microsoft.EventGrid in your subscription  
+>
+> ```text
+> Deployment failed. Correlation ID: e123fa65-1bd0-4fb4-9fcb-7273d011738a.
+> The Microsoft.EventGrid resource provider is not registered in subscription aabbccdd-eeee-ffff-gggg-hhiijjkkllmm.
+> To resolve this, register the provider in the subscription and retry the operation.
+> ```
+>
+> Register Microsoft.EventGrid to your subscription with :
+>
+> ```bash
+> az provider register --namespace Microsoft.EventGrid
+> ```
+>
+> Or in [Azure Portal](https://docs.microsoft.com/en-us/azure/azure-resource-manager/templates/error-register-resource-provider#solution-3---azure-portal), navigate to `Resource Providers` page from your subscription
+
+## Create a resource
 
 Let's create a resource in the resource group so you can see events in Event Grid Viewer
 
 Create Device Provisioning Service (DPS) with :
 
-```bash
-az iot dps create --resource-group $myResourceGroup --name EventGridViewerDPS
-```
+- Windows
+
+    ```cmd
+    az iot dps create --resource-group %ResourceGroupName% --name EventGridViewerDPS
+    ```
+
+- Linux
+
+    ```bash
+    az iot dps create --resource-group $ResourceGroupName --name EventGridViewerDPS
+    ```
 
 Example :
 
 ```bash
-az iot hub create --name EventGridViewerTestIoTHub --resource-group $myResourceGroup --sku S1
+az iot dps create --resource-group $ResourceGroupName --name EventGridViewerDPS
 {
-  "etag": "AAAAAAxJUoM=",
-  "id": "/subscriptions/8fe26a8e-ded0-4dce-83c7-efdb495f2dc3/resourceGroups/EventGrid-Viewer/providers/Microsoft.Devices/IotHubs/EventGridViewerTestIoTHub",
+  "etag": "AAAAAAKXN58=",
+  "id": "/subscriptions/46e2593f-996e-4982-a929-8d07ea946e79/resourceGroups/EventGrid-Demo/providers/Microsoft.Devices/provisioningServices/EventGridViewerDPS",
   "location": "westus2",
-  "name": "EventGridViewerTestIoTHub",
+  "name": "EventGridViewerDPS",
   "properties": {
+    "allocationPolicy": "Hashed",
     "authorizationPolicies": null,
-    "cloudToDevice": {
-      "defaultTtlAsIso8601": "1:00:00",
-      "feedback": {
-        "lockDurationAsIso8601": "0:00:05",
-        "maxDeliveryCount": 10,
-        "ttlAsIso8601": "1:00:00"
-      },
-      "maxDeliveryCount": 10
-    },
-    "comments": null,
-    "deviceStreams": null,
-    "enableFileUploadNotifications": false,
-    "eventHubEndpoints": {
-      "events": {
-        "endpoint": "sb://iothub-ns-eventgridv-3136514-74686ad0dc.servicebus.windows.net/",
-        "partitionCount": 4,
-        "partitionIds": [
-          "0",
-          "1",
-          "2",
-          "3"
-        ],
-        "path": "eventgridviewertestiothub",
-        "retentionTimeInDays": 1
-      }
-    },
-    "features": "None",
-    "hostName": "EventGridViewerTestIoTHub.azure-devices.net",
-    "ipFilterRules": [],
-    "locations": [
-      {
-        "location": "West US 2",
-        "role": "primary"
-      },
-      {
-        "location": "West Central US",
-        "role": "secondary"
-      }
-    ],
-    "messagingEndpoints": {
-      "fileNotifications": {
-        "lockDurationAsIso8601": "0:01:00",
-        "maxDeliveryCount": 10,
-        "ttlAsIso8601": "1:00:00"
-      }
-    },
+    "deviceProvisioningHostName": "global.azure-devices-provisioning.net",
+    "idScope": "0ne000DF9ED",
+    "iotHubs": [],
     "provisioningState": "Succeeded",
-    "routing": {
-      "endpoints": {
-        "eventHubs": [],
-        "serviceBusQueues": [],
-        "serviceBusTopics": [],
-        "storageContainers": []
-      },
-      "enrichments": null,
-      "fallbackRoute": {
-        "condition": "true",
-        "endpointNames": [
-          "events"
-        ],
-        "isEnabled": true,
-        "name": "$fallback"
-      },
-      "routes": []
-    },
-    "state": "Active",
-    "storageEndpoints": {
-      "$default": {
-        "connectionString": "",
-        "containerName": "",
-        "sasTtlAsIso8601": "1:00:00"
-      }
-    }
+    "serviceOperationsHostName": "EventGridViewerDPS.azure-devices-provisioning.net",
+    "state": "Active"
   },
-  "resourcegroup": "EventGrid-Viewer",
+  "resourcegroup": "EventGrid-Demo",
   "sku": {
     "capacity": 1,
     "name": "S1",
     "tier": "Standard"
   },
-  "subscriptionid": "8fe26a8e-ded0-4dce-83c7-efdb495f2dc3",
+  "subscriptionid": "46e2593f-996e-4982-a929-8d07ea946e79",
   "tags": {},
-  "type": "Microsoft.Devices/IotHubs"
+  "type": "Microsoft.Devices/provisioningServices"
 }
 ```
 
-You should see new events in Event Grid Viewer
+## Confirm Events are pushed to Event Grid Viewer
 
-:::image type="content" source="media/WebApp-03.png" alt-text="WebApp-03":::
+You should see new events in Event Grid Viewer.
+
+> [!TIP]  
+> You may have to wait for event delivery for few seconds to a minute or so
+
+:::image type="content" source="media/WebApp-02.png" alt-text="WebApp-02":::
 
 ## Other Azure services as publishers
 
@@ -217,7 +292,6 @@ You should see new events in Event Grid Viewer
 |Service Bus            | <https://docs.microsoft.com/en-us/azure/event-grid/event-schema-service-bus> |
 |Subscription           | <https://docs.microsoft.com/en-us/azure/event-grid/event-schema-subscriptions>         |
 
-
 ## Clean Up
 
 Clean up the resource group you created from this demo with :
@@ -225,6 +299,14 @@ Clean up the resource group you created from this demo with :
 > [!CAUTION]  
 > This will also delete Event Viewer Grid Viewer
 
-```bash
-az group delete --name $myResourceGroup --yes
-```
+- Windows
+
+    ```cmd
+    az group delete --name %ResourceGroupName% --yes
+    ```
+
+- Linux
+
+    ```bash
+    az group delete --name $ResourceGroupName --yes
+    ```

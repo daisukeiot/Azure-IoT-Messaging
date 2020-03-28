@@ -2,15 +2,23 @@
 
 ## Contents
 
-1. Azure Resource Manager (ARM) template to create Event Hubs
-1. Event Hubs Consumer (Subscriber) App
-1. Event Hubs Producer (Publisher) App
+1. Create an Event Hubs with Azure Resource Manager (ARM) template
+1. Run Event Hubs Consumer (Subscriber) App
+1. Run Event Hubs Producer (Publisher) App
+
+## Mechanics
+
+- Event Hubs Consumer App listen for events submitted to Event Hubs
+- Event Hubs Producer App publishes events to Event Hubs with different parameters
+- When events are submitted by the Producer App, you can see those events in the Consumer App
+
+:::image type="content" source="media/Flow.png" alt-text="Flow":::
 
 ## Event Hubs Resource
 
 In this demo, we will send and read/receive events from Event Hubs
 
-Deploy Event Hubs by clicking "Deploy to Azure" button :
+Deploy Event Hubs by clicking "Deploy to Azure" button below :
 
 [![Deploy](../media/deploybutton.png)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fdaisukeiot%2FAzure-IoT-Messaging%2Fmaster%2FEventHubs%2FEventHubsARM.json)
 
@@ -85,7 +93,7 @@ Retrieve Connection String of `ListenRule` from Event Hubs Namespace store to `l
     myResourceGroup=<Resource Group Name>
     myNameSpace=<Event Hubs Namespace>
     az account set --subscription "<name or ID of the subscription>"
-    listenCS="$(az eventhubs namespace authorization-rule keys list --resource-group $myResourceGroup --namespace-name $myNameSpace --name SendRule --query primaryConnectionString)"
+    listenCS="$(az eventhubs namespace authorization-rule keys list --resource-group $myResourceGroup --namespace-name $myNameSpace --name SendRule --query primaryConnectionString --output tsv)"
     ```
 
 #### ListenRule Example
@@ -107,7 +115,7 @@ Run AZ CLI command and set the Connection String to a local variable `listenCS`
     myResourceGroup=EventHubs-Demo
     myNameSpace=EventHubs-Demo-NS-i2bky5u4lygia
     az account set --subscription "HOL"
-    listenCS="$(az eventhubs namespace authorization-rule keys list --resource-group $myResourceGroup --namespace-name $myNameSpace --name ListenRule --query primaryConnectionString)"
+    listenCS="$(az eventhubs namespace authorization-rule keys list --resource-group $myResourceGroup --namespace-name $myNameSpace --name ListenRule --query primaryConnectionString --output tsv)"
     ```
 
 ### Retrieve Event Hub Name
@@ -123,7 +131,7 @@ Retrieve the name of Event Hub and set to `eventHub` variable with :
 - Linux
 
     ```bash
-    eventHub="$(az eventhubs eventhub list --resource-group $myResourceGroup --namespace-name $myNameSpace --query [0].name)"
+    eventHub="$(az eventhubs eventhub list --resource-group $myResourceGroup --namespace-name $myNameSpace --query [0].name --output tsv)"
     ```
 
 ### Launch the Consumer App
