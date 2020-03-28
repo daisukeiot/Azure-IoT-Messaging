@@ -20,7 +20,7 @@ In this demo, we will send and read/receive events from Event Hubs
 
 Deploy Event Hubs by clicking "Deploy to Azure" button below :
 
-[![Deploy](../media/deploybutton.png)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fdaisukeiot%2FAzure-IoT-Messaging%2Fmaster%2FEventHubs%2FEventHubsARM.json)
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fdaisukeiot%2FAzure-IoT-Messaging%2Fmaster%2FEventHubs%2FEventHubsARM.json" target="_blank"><img src="../media/deploybutton.png"/></a>
 
 ### Deploy Event Hubs
 

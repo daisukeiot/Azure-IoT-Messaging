@@ -20,7 +20,7 @@
 
 Using Event Grid Viewer app from <https://github.com/Azure-Samples/azure-event-grid-viewer>, set up a web site by clicking "Deploy to Azure" button below :
 
-[![Deploy](../media/deploybutton.png)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fdaisukeiot%2FAzure-IoT-Messaging%2Fmaster%2FEventGrid%2FEventGridARM.json)
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fdaisukeiot%2FAzure-IoT-Messaging%2Fmaster%2FEventGrid%2FEventGridARM.json" target="_blank"><img src="../media/deploybutton.png"/></a>
 
 ### Deploy Event Grid Viewer Web App
 
