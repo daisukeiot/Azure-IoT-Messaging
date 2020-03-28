@@ -13,6 +13,7 @@
 - When events are submitted by the Producer App, you can see those events in the Consumer App
 
 ![Flow](media/Flow.png)
+
 ## Event Hubs Resource
 
 In this demo, we will send and read/receive events from Event Hubs
@@ -382,4 +383,3 @@ To clean up resources, run
     ```bash
     az group delete --name $myResourceGroup --yes
     ```
-    
