@@ -17,7 +17,7 @@ namespace Consumer
             app.FullName = "Event Hubs Consumer";
             app.Description = "Event Hubs Consumer Sample";
             app.HelpOption("-h|-?|--help");
-
+            var hubName = String.Empty;
             var connectionString = app.Option("-cs", "Specify ConnectionString", CommandOptionType.SingleValue, true);
             var group            = app.Option("-cg", "Specify Consumer Group", CommandOptionType.SingleValue);
             var hub              = app.Option("-hub", "Specify Event Hub", CommandOptionType.SingleValue);
@@ -30,10 +30,29 @@ namespace Consumer
                 return 0;
             }
 
-            if (!hub.HasValue() || string.IsNullOrEmpty(hub.Value()))
+            var csValue = connectionString.Value().Replace("\"", "").Trim();
+            var csValueItems = csValue.Split(";");
+
+            foreach (var csValueItem in csValueItems)
             {
-                ShowHelp();
-                return 0;
+                var valuePair = csValueItem.Split("=");
+
+                if (valuePair[0].ToLower() == "entitypath")
+                {
+                    hubName = valuePair[1];
+                    break;
+                }
+            }
+
+            if (hubName == String.Empty)
+            {
+                if (!hub.HasValue() || string.IsNullOrEmpty(hub.Value()))
+                {
+                    ShowHelp();
+                    return 0;
+                } else {
+                    hubName = hub.Value().Replace("\"", "").Trim();
+                }
             }
 
             //
@@ -52,12 +71,12 @@ namespace Consumer
             }
 
             Console.WriteLine("Connection String : {0}....", connectionString.Value().Replace("\"", "").Trim().Substring(0, 50));
-            Console.WriteLine($"Event Hub         : {hub.Value().Replace("\"", "").Trim()}");
+            Console.WriteLine($"Event Hub         : {hubName}");
             Console.WriteLine($"Consumer Group    : {consumerGroup}");
             Console.WriteLine($"Read all events   : {allEvents.HasValue()}");
             Console.WriteLine($"Timeout           : {readTimetoutSeconds} seconds");
 
-            EventHubConsumerClient consumer = new EventHubConsumerClient(consumerGroup, connectionString.Value().Replace("\"", "").Trim(), hub.Value().Replace("\"", "").Trim());
+            EventHubConsumerClient consumer = new EventHubConsumerClient(consumerGroup, connectionString.Value().Replace("\"", "").Trim(), hubName);
 
             var part = await consumer.GetPartitionIdsAsync();
             var part_prop = await consumer.GetPartitionPropertiesAsync(part[0]);
