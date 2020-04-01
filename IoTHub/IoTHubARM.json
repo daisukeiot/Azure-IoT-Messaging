@@ -2,37 +2,45 @@
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "IoTHub_Name": {
+        "IoTHub Name": {
             "type": "string",
             "metadata": {
                 "description": "The name of Event Hubs Namespace that you wish to create.  Must be globally unique"
             },
-            "defaultValue": "[concat(resourceGroup().name, '-IoTHub-', uniqueString(resourceGroup()))]"
+            "defaultValue": "[concat(resourceGroup().name, '-IoTHub-', uniqueString(resourceGroup().id))]"
         },
-        "IoTHubSku": {
+        "IoTHub SKU": {
             "type": "string",
-            "defaultValue": "F1",
-            "allowedValues": [
-              "F1",
-              "S1"
-            ]
-        },
-        "PartitionCount" : {
-            "type": "int",
-            "defaultValue": 2,
-            "minValue": 2,
-            "maxValue": 32
+            "defaultValue":"F1",
+            "allowedValues":[
+                "F1",
+                "S1"
+            ],
+            "metadata": {
+                "description": "IoT Hub SKU."
+            }
         }
     },
-    "variables": {},
+    "variables": {
+        "IoTHubSetting" : {
+            "F1" : {
+                "iothubsku" : "F1",
+                "partitionCount": 2
+            },
+            "S1" : {
+                "iothubsku" : "S1",
+                "partitionCount": 4
+            }
+        } 
+    },
     "resources": [
         {
             "type": "Microsoft.Devices/IotHubs",
             "apiVersion": "2019-11-04",
-            "name": "[parameters('IoTHub_Name')]",
+            "name": "[parameters('IoTHub Name')]",
             "location": "[resourceGroup().location]",
             "sku": {
-                "name": "[parameters('IoTHubSku')]",
+                "name": "[variables('IoTHubSetting')[parameters('IoTHub SKU')].iothubsku]",
                 "tier": "Standard",
                 "capacity": 1
             },
@@ -41,7 +49,7 @@
                 "eventHubEndpoints": {
                     "events": {
                         "retentionTimeInDays": 1,
-                        "partitionCount": "[parameters('PartitionCount')]"
+                        "partitionCount": "[variables('IoTHubSetting')[parameters('IoTHub SKU')].partitionCount]"
                     }
                 },
                 "routing": {
