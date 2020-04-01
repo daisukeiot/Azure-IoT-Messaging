@@ -144,6 +144,8 @@ You can also confirm the subscription in "Event Grid Subscriptions" view
     set ResourceGroupName=EventGrid-Demo
     set Endpoint="https://eventgrid-demo-portal-3rew7lnrbqmce.azurewebsites.net/api/updates"
 
+    az account set --subscription %SubscriptionName%
+
     for /f "tokens=*" %i in ('az group show --name %ResourceGroupName% --query id') do set resourceGroupID=%i
     az eventgrid event-subscription create --name EventGridDemoSubscription --source-resource-id %resourceGroupID% --endpoint %Endpoint%
 
@@ -176,7 +178,9 @@ You can also confirm the subscription in "Event Grid Subscriptions" view
     SubscriptionName=EventGridDemoSubscription
     ResourceGroupName=EventGrid-Demo
     Endpoint=https://eventgrid-demo-portal-3rew7lnrbqmce.azurewebsites.net/api/updates
-    resourceGroupID=$(az group show --name EventGrid-Demo --query id --output tsv)  
+
+    az account set --subscription $SubscriptionName
+    resourceGroupID=$(az group show --name EventGrid-Demo --query id --output tsv)
     az eventgrid event-subscription create --name $SubscriptionName --source-resource-id $resourceGroupID --endpoint $Endpoint
     {
       "deadLetterDestination": null,
