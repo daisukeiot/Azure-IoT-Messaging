@@ -2,14 +2,14 @@
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "IoTHub Name": {
+        "IoT Hub Name": {
             "type": "string",
             "metadata": {
                 "description": "The name of Event Hubs Namespace that you wish to create.  Must be globally unique"
             },
             "defaultValue": "[concat(resourceGroup().name, '-IoTHub-', uniqueString(resourceGroup().id))]"
         },
-        "IoTHub SKU": {
+        "IoT Hub SKU": {
             "type": "string",
             "defaultValue":"F1",
             "allowedValues":[
@@ -37,10 +37,10 @@
         {
             "type": "Microsoft.Devices/IotHubs",
             "apiVersion": "2019-11-04",
-            "name": "[parameters('IoTHub Name')]",
+            "name": "[parameters('IoT Hub Name')]",
             "location": "[resourceGroup().location]",
             "sku": {
-                "name": "[variables('IoTHubSetting')[parameters('IoTHub SKU')].iothubsku]",
+                "name": "[variables('IoTHubSetting')[parameters('IoT Hub SKU')].iothubsku]",
                 "tier": "Standard",
                 "capacity": 1
             },
@@ -49,7 +49,7 @@
                 "eventHubEndpoints": {
                     "events": {
                         "retentionTimeInDays": 1,
-                        "partitionCount": "[variables('IoTHubSetting')[parameters('IoTHub SKU')].partitionCount]"
+                        "partitionCount": "[variables('IoTHubSetting')[parameters('IoT Hub SKU')].partitionCount]"
                     }
                 },
                 "routing": {
