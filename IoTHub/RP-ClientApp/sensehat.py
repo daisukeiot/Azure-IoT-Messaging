@@ -69,11 +69,12 @@ class Sense_Hat:
                 # use the same telemetry with https://azure-samples.github.io/raspberry-pi-web-simulator/
                 self.messageId += 1
                 message = {
-                    "messageId" : self.messageId,
                     "timestamp" : datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z',
+                    "messageId" : self.messageId,
+                    "deviceId" : self.hubManager.deviceId,
                     "temperature": '{:.3f}'.format(self.senseHat.temperature),
                     "humidity":'{:.3f}'.format(self.senseHat.humidity),
-                    "pressure":'{:.3f}'.format(self.senseHat.pressure),
+#                    "pressure":'{:.3f}'.format(self.senseHat.pressure),
                 }
 
                 await self.hubManager.send_Message(message)
