@@ -1,7 +1,30 @@
-# Setting up developer environment for demos
+# IoT Data Ingestion with Azure IoT
 
-## Requirements
+## Ingest IoT Telemetry with Event Hubs
 
-- A PC running Windows 10, MacOS, or Linux
-- Azure CLI (Az CLI)
-  Install Azure CLI from [here](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest)
+Experience IoT Telemetry ingestion by :
+
+- Generating telemetry data with producer application
+- Consuming telemetry data with a consumer application running in Cloud
+
+Instruction[Event Hubs Consumer and Producer Demo App](EventHubs/README.md)
+
+## Ingest IoT Events with Event Grid
+
+Experience IoT Event ingestion by :
+
+- Generating IoT Events with producer application
+- Consuming IoT Events with Event Grid Viewer, Web App
+
+[Instruction](EventGrid/README.md)
+
+## Ingest IoT Telemetry and IoT Events with Azure IoT Hub
+
+Experience IoT Telemetry and Event ingestion by :
+
+- Generating IoT telemetry using Raspberry Pi  
+    If you do not have Raspberry Pi, you can use Raspberry Pi Simulator
+- Consuming Telemetry with a consumer application  
+    The application is the exactly same application used in Event Hub exercise above
+
+[Instruction](IoTHub/README.md)
