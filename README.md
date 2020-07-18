@@ -7,7 +7,7 @@ Experience IoT Telemetry ingestion by :
 - Generating telemetry data with producer application
 - Consuming telemetry data with a consumer application running in Cloud
 
-Instruction[Event Hubs Consumer and Producer Demo App](EventHubs/README.md)
+[Instruction](EventHubs/README.md)
 
 ## Ingest IoT Events with Event Grid
 
